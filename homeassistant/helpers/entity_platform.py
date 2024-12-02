@@ -542,7 +542,11 @@ class EntityPlatform:
         assert self.config_entry
         task = self.config_entry.async_create_task(
             self.hass,
-            self.async_add_entities(new_entities, update_before_add=update_before_add, subentry_id=subentry_id),
+            self.async_add_entities(
+                new_entities,
+                update_before_add=update_before_add,
+                subentry_id=subentry_id,
+            ),
             f"EntityPlatform async_add_entities_for_entry {self.domain}.{self.platform_name}",
             eager_start=True,
         )

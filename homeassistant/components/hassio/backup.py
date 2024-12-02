@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
+from io import IOBase
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from homeassistant.components.backup import (
     AddonInfo,
     AgentBackup,
     BackupAgent,
+    BackupAgentStream,
     BackupProgress,
     BackupReaderWriter,
     Folder,
@@ -48,17 +50,15 @@ class SupervisorLocalBackupAgent(LocalBackupAgent):
     async def async_download_backup(
         self,
         backup_id: str,
-        *,
-        path: Path,
         **kwargs: Any,
-    ) -> None:
+    ) -> BackupAgentStream:
         """Download a backup file."""
         raise NotImplementedError("Not yet supported by supervisor")
 
     async def async_upload_backup(
         self,
         *,
-        path: Path,
+        open_stream: Callable[[], Coroutine[Any, Any, IOBase]],
         backup: AgentBackup,
         **kwargs: Any,
     ) -> None:

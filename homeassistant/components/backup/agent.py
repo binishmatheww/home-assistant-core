@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Callable, Coroutine
+from io import IOBase
 from pathlib import Path
 from typing import Any, Protocol
+
+from aiohttp import StreamReader
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
 from .models import AgentBackup
+
+type BackupAgentStream = IOBase | StreamReader
 
 
 class BackupAgentError(HomeAssistantError):
@@ -31,27 +37,25 @@ class BackupAgent(abc.ABC):
     async def async_download_backup(
         self,
         backup_id: str,
-        *,
-        path: Path,
         **kwargs: Any,
-    ) -> None:
+    ) -> BackupAgentStream:
         """Download a backup file.
 
         :param backup_id: The ID of the backup that was returned in async_list_backups.
-        :param path: The full file path to download the backup to.
+        :return: Either a file-like object or an aiohttp StreamReader.
         """
 
     @abc.abstractmethod
     async def async_upload_backup(
         self,
         *,
-        path: Path,
+        open_stream: Callable[[], Coroutine[Any, Any, IOBase]],
         backup: AgentBackup,
         **kwargs: Any,
     ) -> None:
         """Upload a backup.
 
-        :param path: The full file path to the backup that should be uploaded.
+        :param open_stream: A function returning a file-like object.
         :param backup: Metadata about the backup that should be uploaded.
         """
 

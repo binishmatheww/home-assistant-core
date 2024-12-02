@@ -244,12 +244,16 @@ class BackupManager:
     ) -> None:
         """Upload a backup to selected agents."""
         LOGGER.warning("Uploading backup %s to agents %s", backup.backup_id, agent_ids)
+
+        async def open_backup() -> io.IOBase:
+            return await self.hass.async_add_executor_job(path.open, "rb")
+
         self.syncing = True
         try:
             sync_backup_results = await asyncio.gather(
                 *(
                     self.backup_agents[agent_id].async_upload_backup(
-                        path=path,
+                        open_stream=open_backup,
                         backup=backup,
                     )
                     for agent_id in agent_ids
@@ -552,7 +556,15 @@ class BackupManager:
                 raise HomeAssistantError(
                     f"Backup {backup_id} not found in agent {agent_id}"
                 )
-            await agent.async_download_backup(backup_id, path=path)
+            stream = await agent.async_download_backup(backup_id)
+            file = await self.hass.async_add_executor_job(path.open, "wb")
+            if isinstance(stream, io.IOBase):
+                while chunk := stream.read(2**20):
+                    await self.hass.async_add_executor_job(file.write, chunk)
+            else:
+                async for chunk, _ in stream.iter_chunks():
+                    await self.hass.async_add_executor_job(file.write, chunk)
+            file.close()
 
         await self._reader_writer.async_restore_backup(
             backup_id=backup_id,

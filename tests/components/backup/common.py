@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
+from io import IOBase
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
@@ -12,6 +14,7 @@ from homeassistant.components.backup import (
     AgentBackup,
     BackupAgent,
     BackupAgentPlatformProtocol,
+    BackupAgentStream,
     Folder,
 )
 from homeassistant.components.backup.const import DATA_MANAGER
@@ -81,16 +84,15 @@ class BackupAgentTest(BackupAgent):
     async def async_download_backup(
         self,
         backup_id: str,
-        *,
-        path: Path,
         **kwargs: Any,
-    ) -> None:
+    ) -> BackupAgentStream:
         """Download a backup file."""
+        return AsyncMock(spec_set=["readchunk"])
 
     async def async_upload_backup(
         self,
         *,
-        path: Path,
+        open_stream: Callable[[], Coroutine[Any, Any, IOBase]],
         backup: AgentBackup,
         **kwargs: Any,
     ) -> None:

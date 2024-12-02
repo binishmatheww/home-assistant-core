@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable, Coroutine
+from io import IOBase
 import json
 from pathlib import Path
 from tarfile import TarError
@@ -10,7 +12,7 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.hassio import is_hassio
 
-from .agent import BackupAgent, LocalBackupAgent
+from .agent import BackupAgent, BackupAgentStream, LocalBackupAgent
 from .const import LOGGER
 from .models import AgentBackup
 from .util import read_backup
@@ -60,17 +62,15 @@ class CoreLocalBackupAgent(LocalBackupAgent):
     async def async_download_backup(
         self,
         backup_id: str,
-        *,
-        path: Path,
         **kwargs: Any,
-    ) -> None:
+    ) -> BackupAgentStream:
         """Download a backup file."""
         raise NotImplementedError
 
     async def async_upload_backup(
         self,
         *,
-        path: Path,
+        open_stream: Callable[[], Coroutine[Any, Any, IOBase]],
         backup: AgentBackup,
         **kwargs: Any,
     ) -> None:

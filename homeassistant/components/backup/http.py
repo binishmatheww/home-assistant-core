@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from http import HTTPStatus
+from io import IOBase
 from typing import cast
 
 from aiohttp import BodyPartReader
@@ -61,8 +62,20 @@ class DownloadBackupView(HomeAssistantView):
             local_agent = manager.local_backup_agents[agent_id]
             path = local_agent.get_backup_path(backup_id)
         else:
+            stream = await agent.async_download_backup(backup_id)
             path = manager.temp_backup_dir / f"{backup_id}.tar"
-            await agent.async_download_backup(backup_id, path=path)
+            hass = request.app[KEY_HASS]
+            file = await hass.async_add_executor_job(path.open, "wb")
+            size = 0
+            if isinstance(stream, IOBase):
+                while chunk := stream.read(2**20):
+                    size += len(chunk)
+                    await hass.async_add_executor_job(file.write, chunk)
+            else:
+                async for chunk, _ in stream.iter_chunks():
+                    size += len(chunk)
+                    await hass.async_add_executor_job(file.write, chunk)
+            file.close()
 
         # TODO: We need a callback to remove the temp file once the download is complete
         return FileResponse(

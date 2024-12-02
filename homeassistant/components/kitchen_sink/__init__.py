@@ -98,6 +98,13 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload config entry."""
+    return await hass.config_entries.async_unload_platforms(
+        entry, COMPONENTS_WITH_DEMO_PLATFORM
+    )
+
+
 def _create_issues(hass: HomeAssistant) -> None:
     """Create some issue registry issues."""
     async_create_issue(

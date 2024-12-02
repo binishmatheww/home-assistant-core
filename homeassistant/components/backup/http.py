@@ -66,14 +66,11 @@ class DownloadBackupView(HomeAssistantView):
             path = manager.temp_backup_dir / f"{backup_id}.tar"
             hass = request.app[KEY_HASS]
             file = await hass.async_add_executor_job(path.open, "wb")
-            size = 0
             if isinstance(stream, IOBase):
                 while chunk := stream.read(2**20):
-                    size += len(chunk)
                     await hass.async_add_executor_job(file.write, chunk)
             else:
                 async for chunk, _ in stream.iter_chunks():
-                    size += len(chunk)
                     await hass.async_add_executor_job(file.write, chunk)
             file.close()
 
